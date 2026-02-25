@@ -16,17 +16,13 @@ export default defineSchema({
     lastMessage: v.optional(v.string()),
     lastMessageAt: v.optional(v.number()),
     typing: v.optional(v.string()), // clerkId of the user currently typing
-    unread: v.optional(
-  v.record(v.string(), v.number())
-),
-
+    unread: v.optional(v.record(v.string(), v.number())),
   }),
 
   messages: defineTable({
-  conversationId: v.id("conversations"),
-  senderClerkId: v.string(),
-  text: v.string(),
-  createdAt: v.number(),
-}),
-
+    conversationId: v.id("conversations"),
+    senderClerkId: v.string(),
+    text: v.string(),
+    createdAt: v.number(),
+  }),
 });
