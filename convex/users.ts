@@ -37,9 +37,7 @@ export const getUsers = query({
   async handler(ctx, args) {
     const users = await ctx.db.query("users").collect();
 
-    return users.filter(
-      (user) => user.clerkId !== args.currentUserClerkId
-    );
+    return users.filter((user) => user.clerkId !== args.currentUserClerkId);
   },
 });
 
@@ -57,9 +55,7 @@ export const createOrGetConversation = mutation({
     // Check if conversation already exists
     const existing = await ctx.db
       .query("conversations")
-      .filter((q) =>
-        q.eq(q.field("participants"), participants)
-      )
+      .filter((q) => q.eq(q.field("participants"), participants))
       .first();
 
     if (existing) return existing._id;
@@ -96,8 +92,7 @@ export const sendMessage = mutation({
 
     conversation.participants.forEach((participant) => {
       if (participant !== args.senderClerkId) {
-        unread[participant] =
-          (unread[participant] || 0) + 1;
+        unread[participant] = (unread[participant] || 0) + 1;
       }
     });
 
@@ -116,9 +111,7 @@ export const getMessages = query({
   async handler(ctx, args) {
     return await ctx.db
       .query("messages")
-      .filter((q) =>
-        q.eq(q.field("conversationId"), args.conversationId)
-      )
+      .filter((q) => q.eq(q.field("conversationId"), args.conversationId))
       .order("asc")
       .collect();
   },
@@ -135,7 +128,7 @@ export const getConversations = query({
       .collect();
 
     return conversations.filter((c) =>
-      c.participants.includes(args.currentUserClerkId)
+      c.participants.includes(args.currentUserClerkId),
     );
   },
 });
@@ -182,8 +175,7 @@ export const incrementUnread = mutation({
 
     const unread = conversation.unread || {};
 
-    unread[args.receiverClerkId] =
-      (unread[args.receiverClerkId] || 0) + 1;
+    unread[args.receiverClerkId] = (unread[args.receiverClerkId] || 0) + 1;
 
     await ctx.db.patch(args.conversationId, {
       unread,
