@@ -19,9 +19,15 @@ export function ChatBox({ conversationId, currentUserId, onBack }: ChatBoxProps)
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const previousMessageCountRef = useRef(0);
+    const initializedConversationRef = useRef<ConversationId | null>(null);
+    const isNearBottom = (container: HTMLDivElement) =>
+        container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+
 
     const sendMessage = useMutation(api.users.sendMessage);
     const setTyping = useMutation(api.users.setTyping);
+    const clearUnread = useMutation(api.users.clearUnread);
 
     const messages = useQuery(api.users.getMessages, { conversationId });
     const conversationList = useQuery(api.users.getConversations, {
@@ -31,36 +37,64 @@ export function ChatBox({ conversationId, currentUserId, onBack }: ChatBoxProps)
     const conversation = conversationList?.find((entry) => entry._id === conversationId);
 
     useEffect(() => {
+        previousMessageCountRef.current = 0;
+        initializedConversationRef.current = null;
+        setShowScrollButton(false);
+    }, [conversationId]);
+
+    useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
         const handleScroll = () => {
-            const threshold = 80;
-            const isAtBottom =
-                container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+            const isAtBottom = isNearBottom(container);
 
-            setShowScrollButton(!isAtBottom);
+            if (isAtBottom) {
+                setShowScrollButton(false);
+                if ((conversation?.unread?.[currentUserId] || 0) > 0) {
+                    void clearUnread({ conversationId, clerkId: currentUserId });
+                }
+            }
         };
 
         container.addEventListener("scroll", handleScroll);
         return () => container.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [clearUnread, conversation?.unread, conversationId, currentUserId]);
 
     useEffect(() => {
         const container = containerRef.current;
         if (!container || !messages) return;
 
-        const threshold = 80;
-        const isAtBottom =
-            container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+        if (initializedConversationRef.current !== conversationId) {
+            initializedConversationRef.current = conversationId;
+            previousMessageCountRef.current = messages.length;
+            setShowScrollButton(false);
+            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
 
-        if (isAtBottom) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            if ((conversation?.unread?.[currentUserId] || 0) > 0) {
+                void clearUnread({ conversationId, clerkId: currentUserId });
+            }
             return;
         }
 
-        setShowScrollButton(true);
-    }, [messages]);
+        const previousMessageCount = previousMessageCountRef.current;
+        const hasNewMessage = messages.length > previousMessageCount;
+        previousMessageCountRef.current = messages.length;
+
+        const isAtBottom = isNearBottom(container);
+
+        if (isAtBottom) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            if ((conversation?.unread?.[currentUserId] || 0) > 0) {
+                void clearUnread({ conversationId, clerkId: currentUserId });
+            }
+            return;
+        }
+
+        if (hasNewMessage) {
+            setShowScrollButton(true);
+        }
+    }, [clearUnread, conversation?.unread, conversationId, currentUserId, messages]);
 
     useEffect(() => {
         return () => {

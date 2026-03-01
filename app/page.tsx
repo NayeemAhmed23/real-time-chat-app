@@ -8,6 +8,8 @@ import { ConversationId } from "@/app/components/chat/types";
 import { ChatBox } from "@/app/components/chat/ChatBox";
 import { Sidebar } from "@/app/components/chat/Sidebar";
 import { useUserPresence } from "@/app/hooks/useUserPresence";
+
+
 export default function Home() {
     const { user, handleSignOut } = useUserPresence();
 
@@ -17,7 +19,6 @@ export default function Home() {
     const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
     const createOrGetConversation = useMutation(api.users.createOrGetConversation);
-    const clearUnread = useMutation(api.users.clearUnread);
 
 
     const users = useQuery(api.users.getUsers, user ? { currentUserClerkId: user.id } : "skip");
@@ -25,6 +26,7 @@ export default function Home() {
         api.users.getConversations,
         user ? { currentUserClerkId: user.id } : "skip",
     );
+
     const filteredUsers = useMemo(
         () => users?.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())),
         [search, users],
@@ -35,10 +37,8 @@ export default function Home() {
             currentUserClerkId: user.id,
             otherUserClerkId: otherUserId,
         })) as ConversationId;
-        await clearUnread({
-            conversationId,
-            clerkId: user.id,
-        });
+
+
 
         setActiveConversation(conversationId);
         setIsMobileChatOpen(true);
@@ -46,10 +46,7 @@ export default function Home() {
 
     const handleConversationClick = async (conversationId: ConversationId) => {
         if (!user) return;
-        await clearUnread({
-            conversationId,
-            clerkId: user.id,
-        });
+
 
         setActiveConversation(conversationId);
         setIsMobileChatOpen(true);
