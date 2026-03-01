@@ -80,6 +80,10 @@ export function ChatBox({ conversationId, currentUserId, onBack }: ChatBoxProps)
         const previousMessageCount = previousMessageCountRef.current;
         const hasNewMessage = messages.length > previousMessageCount;
         previousMessageCountRef.current = messages.length;
+        const latestMessage = messages[messages.length - 1];
+        const hasIncomingMessage =
+            hasNewMessage && latestMessage?.senderClerkId !== currentUserId;
+        previousMessageCountRef.current = messages.length;
 
         const isAtBottom = isNearBottom(container);
 
@@ -91,11 +95,11 @@ export function ChatBox({ conversationId, currentUserId, onBack }: ChatBoxProps)
             return;
         }
 
-        if (hasNewMessage) {
+        if (hasIncomingMessage) {
             setShowScrollButton(true);
         }
     }, [clearUnread, conversation?.unread, conversationId, currentUserId, messages]);
-
+~
     useEffect(() => {
         return () => {
             if (typingTimeoutRef.current) {
